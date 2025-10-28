@@ -1,14 +1,15 @@
-# 🚗 DeepVRP - Deep Learning for Vehicle Routing Problems
+# DeepVRP - Deep Learning for Vehicle Routing Problems
 
-**Araştırmacı:** Yasin  
+### Attention (:D) : This repository is under development and represents my learning process.
+
 **Amaç:** VRP problemlerini Deep Learning yöntemleriyle çözmeyi öğrenmek ve araştırma yapmak  
 **Başlangıç:** 28 Ekim 2025
 
-## 📖 Proje Hakkında
+## Proje Hakkında
 
 Bu proje, Vehicle Routing Problem (VRP) ve türevlerini (TSP, CVRP, VRPTW, vb.) derin öğrenme yöntemleriyle çözmeyi öğrenmek için hazırlanmış kapsamlı bir eğitim ve araştırma deposudur.
 
-### 🎯 Kapsanan Yöntemler
+### Kapsanan Yöntemler
 
 1. **Reinforcement Learning**
    - Policy Gradient
@@ -30,7 +31,7 @@ Bu proje, Vehicle Routing Problem (VRP) ve türevlerini (TSP, CVRP, VRPTW, vb.) 
    - Multi-Head Attention
    - Cross-Attention
 
-## 📁 Proje Yapısı
+## Proje Yapısı
 
 ```
 DeepVRP/
@@ -71,7 +72,7 @@ DeepVRP/
     └── helpers.py       # Genel yardımcı fonksiyonlar
 ```
 
-## 🛠️ Kurulum
+##  Kurulum
 
 ### Gereksinimler
 
@@ -96,7 +97,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-## 📚 Öğrenme Sırası (Önerilen)
+##  Öğrenme Sırası (Önerilen)
 
 ### Hafta 1-2: Temel Kavramlar
 - [ ] VRP ortamı ve problem tanımı
@@ -123,7 +124,7 @@ pip install -r requirements.txt
 - [ ] VRPTW, EVRP gibi varyantlar
 - [ ] Kendi araştırma fikirlerinizi geliştirme
 
-## 📊 Referanslar
+##  Referanslar
 
 Bu projede kullanılan önemli makaleler:
 
@@ -132,7 +133,7 @@ Bu projede kullanılan önemli makaleler:
 3. **Graph Attention Networks** - Veličković et al. (2018): "Graph Attention Networks"
 4. **Learn2Opt** - Chen & Tian (2019): "Learning to Perform Local Rewriting for Combinatorial Optimization"
 
-## 📝 Notlar ve İlerlemeler
+##  Notlar ve İlerlemeler
 
 ### Günlük Notlar
 Bu bölümü kendi öğrenme notlarınızla doldurun.
