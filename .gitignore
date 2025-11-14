@@ -1,3 +1,8 @@
+dataset/esogu/matrix
+dataset/esogu/problems
+
+
+
 # Python
 __pycache__/
 *.py[cod]
