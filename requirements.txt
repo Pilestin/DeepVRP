@@ -20,6 +20,7 @@ tensorboard>=2.13.0
 
 # Data Handling
 pandas>=2.0.0
+openpyxl>=3.1.0
 
 # Optional: For advanced visualizations
 plotly>=5.14.0
