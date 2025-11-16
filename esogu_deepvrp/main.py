@@ -2,6 +2,7 @@
 
 import os 
 import sys
+from datetime import datetime
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -12,14 +13,16 @@ from util.read_problem_instance import select_problemset
 from util.data_preparation import create_problem_from_raw_data, prepare_for_deep_learning
 # PROCESS STARTER
 from start_process import start_process
+# ALGORITHMS
+from algorithms import solve_vrp_problem
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_path = os.path.abspath(os.path.join(current_dir, '..'))
-problem_files = os.path.join(project_path, 'dataset', 'esogu', 'problems')
-distance_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Distance_matrix_v3.2.xlsx')
-energy_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Energy_matrix_v3.2.xlsx')
-location_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Location_matrix_v3.2.xlsx')
+project_path = os.path.abspath(os.path.join(current_dir, '..'))                                                 #
+problem_files = os.path.join(project_path, 'dataset', 'esogu', 'problems')                                      # problem dosyalarının bulunduğu klasör     
+distance_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Distance_matrix_v3.2.xlsx')    # mesafe matrisi
+energy_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Energy_matrix_v3.2.xlsx')        # enerji matrisi
+location_matrix_file = os.path.join(project_path, 'dataset', 'esogu', 'matrix', 'Location_matrix_v3.2.xlsx')    # lokasyon matrisi
 
 
 """ Bu kısımda öncelikle seçilen problem okunacak ve Modellenecek 
@@ -36,7 +39,7 @@ def main():
     # HİKAYE Printleri
     print_paths(project_path, problem_files, distance_matrix_file, energy_matrix_file, location_matrix_file)
     
-    # Problemi input() olarak seç 
+    # Problemi input() olarak seçx 
     selected_key, problemset_dict = select_problemset()
     
     # Seçilen problem ile işlemleri başlat
@@ -56,8 +59,8 @@ def main():
         energy_matrix=energy_matrix,
         location_paths=location_matrix,
         num_vehicles=5,
-        vehicle_capacity=200.0,
-        battery_capacity=100.0
+        vehicle_capacity=350.0,
+        battery_capacity=15600.0
     )
     
     print(f"✓ {vrp_problem}")
@@ -90,18 +93,126 @@ def main():
     print(f"  - Distance Matrix: {distance_matrix.shape}")
     print(f"  - Energy Matrix: {energy_matrix.shape}")
     print(f"  - Location Paths: {len(location_matrix)} routes")
+    print(f"\nVehicle Configuration:")
+    print(f"  - Number of Vehicles: {vrp_problem.num_vehicles}")
+    print(f"  - Capacity: {vrp_problem.vehicles[0].capacity} kg")
+    print(f"  - Battery Capacity: {vrp_problem.vehicles[0].battery_capacity} kWh")
     
-    return vrp_problem, dl_data
+    # Deep Learning Modelleri ile Çözüm
+    print("\n" + "="*70)
+    print("TESTING DEEP LEARNING MODELS")
+    print("="*70)
+    
+    import sys
+    sys.path.insert(0, os.path.join(project_path, 'model'))
+    from vrp_models import create_vrp_model, get_model_params
+    from algorithms.deep_vrp_solver import DeepVRPSolver
+    
+    models_to_test = [
+        ('Attention', 'attention'),
+        ('Pointer Network', 'pointer'),
+        ('Seq2Seq', 'seq2seq'),
+        ('GCN', 'gcn'),
+        ('GAT', 'gat'),
+        ('Hybrid', 'hybrid')
+    ]
+    
+    results = {}
+    
+    for model_name, model_type in models_to_test:
+        print(f"\n--- {model_name} Model ---")
+        
+        try:
+            # Create model
+            model = create_vrp_model(model_type, input_dim=7, hidden_dim=128)
+            num_params = get_model_params(model)
+            print(f"✓ Model created: {num_params:,} parameters")
+            
+            # Solve
+            solver = DeepVRPSolver(model, model_type, device='cpu')
+            routes, total_distance, total_time, total_energy = solver.solve(
+                problem=vrp_problem,
+                node_features=dl_data['node_features'],
+                graph_data=dl_data.get('graph_data'),
+                greedy=True
+            )
+            
+            # Store results
+            results[model_name] = {
+                'routes': routes,
+                'distance': total_distance,
+                'time': total_time,
+                'energy': total_energy,
+                'num_vehicles': len(routes),
+                'params': num_params
+            }
+            
+            print(f"  Vehicles used: {len(routes)}")
+            print(f"  Total Distance: {total_distance:.2f} m")
+            print(f"  Total Time: {total_time:.2f} s ({total_time/60:.2f} min)")
+            print(f"  Total Energy: {total_energy:.2f} kWh")
+        except Exception as e:
+            print(f"  ❌ Error: {str(e)}")
+            results[model_name] = None
+    
+    # Comparison Table
+    print("\n" + "="*70)
+    print("MODEL COMPARISON")
+    print("="*70)
+    print(f"\n{'Model':<20} {'Params':<12} {'Vehicles':<10} {'Distance':<12} {'Time':<12} {'Energy':<12}")
+    print("-"*90)
+    
+    for model_name in results:
+        if results[model_name]:
+            r = results[model_name]
+            print(f"{model_name:<20} {r['params']:<12,} {r['num_vehicles']:<10} "
+                  f"{r['distance']:<12.2f} {r['time']/60:<12.2f} {r['energy']:<12.2f}")
+    
+    print("="*90)
+    
+    # Save results to file
+    results_file = os.path.join(current_dir, 'deep_vrp_results.txt')
+    with open(results_file, 'w') as f:
+        f.write(f"MODEL COMPARISON {datetime.now()}\n")
+        f.write(f"\n{'Model':<20} {'Params':<12} {'Vehicles':<10} {'Distance':<12} {'Time':<12} {'Energy':<12}\n")
+        f.write("-"*90 + "\n")
+        
+        for model_name in results:
+            if results[model_name]:
+                r = results[model_name]
+                f.write(f"{model_name:<20} {r['params']:<12,} {r['num_vehicles']:<10} "
+                        f"{r['distance']:<12.2f} {r['time']/60:<12.2f} {r['energy']:<12.2f}\n")
+                f.write("="*90 + "\n")
+                f.write("\nRoutes:\n")
+                for i, route in enumerate(r['routes']):
+                    f.write(f"  Vehicle {i+1}: {route}\n")
+                f.write("\n")
+    print(f"\n✓ Results saved to {results_file}")
+    print("="*70)
+
+
+    # Show best model routes
+    if results:
+        best_model = min(
+            [(name, r) for name, r in results.items() if r],
+            key=lambda x: x[1]['distance']
+        )
+        
+        print(f"\n--- Best Model: {best_model[0]} (Distance: {best_model[1]['distance']:.2f} m) ---")
+        print("\nRoutes:")
+        routes_str = "["
+        for i, route in enumerate(best_model[1]['routes']):
+            if i > 0:
+                routes_str += ", "
+            routes_str += "[" + ", ".join(route) + "]"
+        routes_str += "]"
+        print(f"Routes = {routes_str}")
+    
+    return vrp_problem, dl_data, results
 
 if __name__ == "__main__":
-    vrp_problem, dl_data = main()
+    vrp_problem, dl_data, results = main()
     
-    # Embeddings test
-    print("\n" + "="*60)
-    print("Would you like to test embeddings? (y/n)")
-    choice = input("Choice: ").strip().lower()
-    
-    if choice == 'y':
-        from test_embeddings import test_embeddings
-        embedding_results = test_embeddings(dl_data)
-        print("Embedding models are ready for training!")
+    print("\n" + "="*70)
+    print("✓ ALL MODELS TESTED!")
+    print("="*70)

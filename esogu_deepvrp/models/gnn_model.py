@@ -409,3 +409,76 @@ class GNNModel(nn.Module):
     ) -> torch.Tensor:
         """Encode node features."""
         return self.encoder(node_features, distance_matrix, self.k_neighbors)
+
+
+class GNNVRPModel(nn.Module):
+    """
+    GNN-based model for VRP (GCN or GAT).
+    """
+    
+    def __init__(
+        self,
+        input_dim: int = 7,
+        hidden_dim: int = 128,
+        num_layers: int = 3,
+        layer_type: str = 'gat',
+        num_heads: int = 4
+    ):
+        super().__init__()
+        self.gnn = GNN(
+            input_dim, hidden_dim, hidden_dim,
+            num_layers, layer_type, num_heads
+        )
+        
+        # Context embedding
+        self.context_proj = nn.Linear(hidden_dim + 1, hidden_dim)
+        
+        # Pointer mechanism
+        self.W_q = nn.Linear(hidden_dim, hidden_dim)
+        self.W_k = nn.Linear(hidden_dim, hidden_dim)
+        self.v = nn.Linear(hidden_dim, 1)
+        
+    def forward(
+        self,
+        node_features: torch.Tensor,
+        adjacency: torch.Tensor,
+        current_node_idx: torch.Tensor,
+        remaining_capacity: torch.Tensor,
+        mask: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Args:
+            node_features: (batch, num_nodes, input_dim)
+            adjacency: (batch, num_nodes, num_nodes)
+            current_node_idx: (batch,)
+            remaining_capacity: (batch, 1)
+            mask: (batch, num_nodes)
+        
+        Returns:
+            log_probs: (batch, num_nodes)
+        """
+        batch_size, num_nodes, _ = node_features.size()
+        
+        # Encode with GNN
+        node_embeddings = self.gnn(node_features, adjacency)
+        
+        # Current node embedding
+        current_emb = node_embeddings[torch.arange(batch_size), current_node_idx]
+        
+        # Context with capacity
+        context = torch.cat([current_emb, remaining_capacity], dim=-1)
+        context_emb = self.context_proj(context)
+        
+        # Attention scores
+        Q = self.W_q(context_emb).unsqueeze(1)  # (batch, 1, hidden)
+        K = self.W_k(node_embeddings)  # (batch, num_nodes, hidden)
+        
+        energies = torch.tanh(Q + K)
+        scores = self.v(energies).squeeze(-1)  # (batch, num_nodes)
+        
+        # Apply mask
+        scores = scores.masked_fill(~mask, float('-inf'))
+        
+        log_probs = F.log_softmax(scores, dim=-1)
+        
+        return log_probs

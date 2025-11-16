@@ -9,13 +9,13 @@ from dataclasses import dataclass
 class Vehicle:
     """Electric vehicle for EVRP."""
     vehicle_id: int
-    capacity: float = 200.0  # Max load capacity (kg)
-    battery_capacity: float = 100.0  # kWh
-    initial_battery: float = 100.0  # Starting battery level
+    capacity: float = 350.0  # Max load capacity (kg)
+    battery_capacity: float = 15600.0  # kWh
+    initial_battery: float = 15600.0  # Starting battery level
     
     # Current state
     current_load: float = 0.0
-    current_battery: float = 100.0
+    current_battery: float = 15600.0
     current_location: int = 0  # Node index
     
     def reset(self):

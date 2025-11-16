@@ -19,8 +19,8 @@ class VRPProblem:
         energy_matrix: np.ndarray,
         location_paths: Dict[Tuple[int, int], np.ndarray],
         num_vehicles: int = 5,
-        vehicle_capacity: float = 200.0,
-        battery_capacity: float = 100.0
+        vehicle_capacity: float = 350.0,
+        battery_capacity: float = 15600.0
     ):
         self.depot = depot
         self.customers = customers

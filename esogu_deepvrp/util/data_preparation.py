@@ -12,8 +12,8 @@ from typing import Tuple, Dict
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from esogu_deepvrp.data_classes import Depot, Customer, VRPProblem
-from model.embeddings import create_node_features_from_problem
-from model.transforms import normalize_features, to_graph_data
+from models.embeddings import create_node_features_from_problem
+from models.transforms import normalize_features, to_graph_data
 
 
 def create_problem_from_raw_data(
@@ -22,8 +22,8 @@ def create_problem_from_raw_data(
     energy_matrix: np.ndarray,
     location_paths: dict,
     num_vehicles: int = 5,
-    vehicle_capacity: float = 200.0,
-    battery_capacity: float = 100.0
+    vehicle_capacity: float = 350.0,
+    battery_capacity: float = 15600.0
 ) -> VRPProblem:
     """
     Raw veriyi VRPProblem nesnesine dönüştürür.
